@@ -29,7 +29,7 @@ Provider and model choices are intentionally developer-controlled, not end-user 
 providers: {
 	gemini: {
 		cheapModel: "gemini-2.5-flash",
-		expensiveModel: "gemini-3.5-pro"
+		expensiveModel: "gemini-3.1-pro-preview"
 	}
 }
 ```
@@ -42,6 +42,17 @@ This is a static browser app, so API keys cannot be kept secret from the browser
 
 Cookies are not safer here. A regular JavaScript-readable cookie is exposed to the page just like web storage. An `HttpOnly` cookie would be safer, but a static GitHub Pages app cannot set or use one for provider authorization without a backend.
 
+For local Gemini testing, copy `js/env.local.example.js` to `js/env.local.js` and fill in `GEMINI_API_KEY`. The real `js/env.local.js` file is ignored by git:
+
+```js
+export const LOCAL_ENV = {
+	SEC_IDENTITY: "Your Name your.email@example.com",
+	GEMINI_API_KEY: "your-test-key"
+};
+```
+
+This is only a local convenience. Do not deploy `js/env.local.js` with a real key to GitHub Pages, because every browser user could read it.
+
 ## SEC Access Notes
 
 The app uses:
@@ -52,15 +63,17 @@ The app uses:
 
 SEC asks automated clients to declare a user agent and stay under the current fair-access request limit of 10 requests per second. This app throttles SEC requests below that limit. Browser JavaScript cannot set the forbidden `User-Agent` header, so full declared-user-agent compliance requires a backend or proxy. The SEC identity field is still collected so the app can preserve the required identity information and be ready for a future proxy.
 
-SEC archive text responses may omit browser CORS headers. Direct SEC links still open in the browser, but JavaScript may be blocked from fetching filing text for search. If you operate a compliant proxy, configure it in `js/config.js`:
+SEC responses may omit browser CORS headers. Direct SEC links still open in the browser, but JavaScript may be blocked from fetching ticker metadata, submissions metadata, or filing text. If you operate a compliant proxy, configure it in `js/config.js`:
 
 ```js
 sec: {
-	filingTextProxyUrl: "https://your-proxy.example.com/fetch?url="
+	secProxyUrl: "https://your-proxy.example.com/fetch?url="
 }
 ```
 
-Leave `filingTextProxyUrl` blank to attempt direct SEC archive fetches.
+The app appends `encodeURIComponent(secUrl)` to `secProxyUrl`. You can also use `{url}` as an encoded URL placeholder or `{rawUrl}` as a raw URL placeholder. Leave `secProxyUrl` blank to attempt direct SEC fetches.
+
+Public demo CORS proxies are often rate-limited, blocked by SEC, or unreliable for large filing payloads. For production, use a proxy you control so it can send the SEC identity header and return CORS-enabled responses.
 
 ## Deploy To GitHub Pages
 

@@ -18,6 +18,6 @@ To add embeddings, ranking, or agentic search, keep the public shape of `answerQ
 
 ## Static-App Limits
 
-This app has no backend. Browser JavaScript cannot hide provider API keys, cannot set the forbidden `User-Agent` header required for full SEC declared-agent compliance, and may run into provider or SEC CORS limits. Those limits are surfaced in the UI and documented in the README.
+This app has no backend. Browser JavaScript cannot hide provider API keys, and some browsers may omit the forbidden `User-Agent` header even when the SEC module is configured with an identity. Node/static-test runs can send it; full browser compliance may require a backend or proxy. The app may also run into provider or SEC CORS limits. Those limits are surfaced in the UI and documented in the README.
 
-`js/config.js` includes `sec.filingTextProxyUrl` for deployments that operate a compliant filing-text proxy. The app remains static because the proxy URL is just developer-controlled configuration, but the proxy itself is outside this repository.
+`js/config.js` includes `sec.secProxyUrl` for deployments that operate a compliant SEC proxy for ticker metadata, submissions metadata, and filing text. The app remains static because the proxy URL is just developer-controlled configuration, but the proxy itself is outside this repository.

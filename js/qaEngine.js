@@ -58,7 +58,7 @@ function findMatchingParagraphs({ filings, keywords }) {
     const paragraphs = splitParagraphs(filing.text || "");
     for (const paragraph of paragraphs) {
       const lowerParagraph = paragraph.toLowerCase();
-      const matchedKeyword = normalizedKeywords.find((keyword) => lowerParagraph.includes(keyword));
+      const matchedKeyword = normalizedKeywords.find((keyword) => paragraphMatchesKeyword(lowerParagraph, keyword));
       if (!matchedKeyword) {
         continue;
       }
@@ -80,6 +80,23 @@ function findMatchingParagraphs({ filings, keywords }) {
   }
 
   return results;
+}
+
+function paragraphMatchesKeyword(lowerParagraph, keyword) {
+  if (lowerParagraph.includes(keyword)) {
+    return true;
+  }
+
+  const tokens = keyword
+    .split(/[^a-z0-9]+/i)
+    .map((token) => token.trim().toLowerCase())
+    .filter((token) => token.length > 3 && !KEYWORD_STOPWORDS.has(token));
+  if (!tokens.length) {
+    return false;
+  }
+
+  const presentTokens = tokens.filter((token) => lowerParagraph.includes(token));
+  return presentTokens.length >= Math.min(2, tokens.length);
 }
 
 async function evaluateParagraphs({ rephrasedQuery, paragraphs, providerClient }) {
@@ -135,5 +152,19 @@ function splitParagraphs(text) {
 
 function findSentenceContaining(paragraph, keyword) {
   const sentences = paragraph.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [paragraph];
-  return sentences.find((sentence) => sentence.toLowerCase().includes(keyword))?.trim() || paragraph;
+  return sentences.find((sentence) => paragraphMatchesKeyword(sentence.toLowerCase(), keyword))?.trim() || paragraph;
 }
+
+const KEYWORD_STOPWORDS = new Set([
+  "about",
+  "could",
+  "from",
+  "into",
+  "over",
+  "such",
+  "that",
+  "their",
+  "these",
+  "third",
+  "with",
+]);

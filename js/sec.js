@@ -2,6 +2,11 @@ import { APP_CONFIG } from "./config.js";
 
 const TICKER_CACHE_KEY = "sec-filings-qa-ticker-index";
 let lastRequestAt = 0;
+let secIdentity = "";
+
+export function setSecIdentity(identity) {
+  secIdentity = identity.trim();
+}
 
 export async function resolveTicker(ticker) {
   const normalized = ticker.trim().toUpperCase();
@@ -24,25 +29,16 @@ export async function getCompanyFilings({ ticker, limit, offset = 0 }) {
 }
 
 export async function fetchFilingText(filing) {
-  const url = getFilingTextFetchUrl(filing.textUrl);
   let response;
   try {
-    response = await throttledFetch(url, { headers: { Accept: "text/plain,*/*" } });
+    response = await throttledFetch(filing.textUrl, { headers: { Accept: "text/plain,*/*" } });
   } catch (error) {
-    throw new Error(`Could not fetch filing text. SEC archive text is often blocked by browser CORS; configure sec.filingTextProxyUrl in js/config.js or open the SEC link directly. ${error.message}`);
+    throw new Error(`Could not fetch filing text. SEC requests are often blocked by browser CORS; configure sec.secProxyUrl in js/config.js or open the SEC link directly. ${error.message}`);
   }
   if (!response.ok) {
-    throw new Error(`Could not fetch filing text (${response.status}). Configure sec.filingTextProxyUrl in js/config.js or open the SEC link directly.`);
+    throw new Error(`Could not fetch filing text (${response.status}). Configure sec.secProxyUrl in js/config.js or open the SEC link directly.`);
   }
   return response.text();
-}
-
-function getFilingTextFetchUrl(textUrl) {
-  const proxyUrl = APP_CONFIG.sec.filingTextProxyUrl?.trim();
-  if (!proxyUrl) {
-    return textUrl;
-  }
-  return `${proxyUrl}${encodeURIComponent(textUrl)}`;
 }
 
 async function loadTickerIndex() {
@@ -104,10 +100,11 @@ function normalizeRecentFilings(submissions, company) {
   });
 }
 
+
 async function fetchJson(url) {
   const response = await throttledFetch(url, { headers: { Accept: "application/json" } });
   if (!response.ok) {
-    throw new Error(`SEC request failed with HTTP ${response.status}.`);
+    throw new Error(`SEC request failed with HTTP ${response.status} while fetching ${url}${APP_CONFIG.sec.secProxyUrl ? ` through proxy ${APP_CONFIG.sec.secProxyUrl}` : ""}.`);
   }
   return response.json();
 }
@@ -120,5 +117,25 @@ async function throttledFetch(url, options = {}) {
     await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
   lastRequestAt = Date.now();
-  return fetch(url, options);
+  return fetch(getSecFetchUrl(url), {
+    ...options,
+    headers: {
+      ...(secIdentity ? { "User-Agent": secIdentity } : {}),
+      ...options.headers,
+    },
+  });
+}
+
+function getSecFetchUrl(url) {
+  const proxyUrl = APP_CONFIG.sec.secProxyUrl?.trim();
+  if (!proxyUrl) {
+    return url;
+  }
+  if (proxyUrl.includes("{url}")) {
+    return proxyUrl.replace("{url}", encodeURIComponent(url));
+  }
+  if (proxyUrl.includes("{rawUrl}")) {
+    return proxyUrl.replace("{rawUrl}", url);
+  }
+  return `${proxyUrl}${encodeURIComponent(url)}`;
 }

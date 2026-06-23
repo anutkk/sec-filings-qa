@@ -1,13 +1,14 @@
 import { APP_CONFIG, DEFAULT_PROVIDER } from "./config.js";
 import { callJsonModel, callModel, getModelForRole } from "./providers.js";
 import { answerQuestion, summarizeFiling } from "./qaEngine.js";
-import { fetchFilingText, getCompanyFilings } from "./sec.js";
+import { fetchFilingText, getCompanyFilings, setSecIdentity } from "./sec.js";
 import { loadSessionApiKey, loadSettings, saveSessionApiKey, saveSettings } from "./storage.js";
 import { appendMessage, renderCompanySummary, renderFilings, renderProviders, renderSource, selectedFilingIds, setStatus } from "./ui.js";
 
 const state = {
   providerId: DEFAULT_PROVIDER,
   apiKey: "",
+  localEnv: {},
   secIdentity: "",
   ticker: "",
   filingCount: APP_CONFIG.sec.defaultFilingCount,
@@ -40,13 +41,15 @@ const elements = {
 
 init();
 
-function init() {
+async function init() {
   const settings = loadSettings();
+  state.localEnv = await loadLocalEnv();
   state.providerId = settings.providerId || DEFAULT_PROVIDER;
-  state.secIdentity = settings.secIdentity || "";
+  state.secIdentity = settings.secIdentity || state.localEnv.SEC_IDENTITY || "";
+  setSecIdentity(state.secIdentity);
   state.ticker = settings.ticker || "";
   state.filingCount = Number(settings.filingCount || APP_CONFIG.sec.defaultFilingCount);
-  state.apiKey = loadSessionApiKey();
+  state.apiKey = loadSessionApiKey() || getLocalApiKey(state.providerId);
 
   renderProviders(elements.providerSelect, APP_CONFIG.providers, state.providerId);
   elements.apiKeyInput.value = state.apiKey;
@@ -60,6 +63,30 @@ function init() {
   elements.chatForm.addEventListener("submit", handleAskQuestion);
   elements.chatLog.addEventListener("click", handleCitationClick);
   elements.filingsList.addEventListener("change", handleFilingSelection);
+  elements.providerSelect.addEventListener("change", handleProviderChange);
+}
+
+async function loadLocalEnv() {
+  try {
+    const module = await import("./env.local.js");
+    return module.LOCAL_ENV || {};
+  } catch {
+    return {};
+  }
+}
+
+function getLocalApiKey(providerId) {
+  if (providerId === "gemini") {
+    return state.localEnv.GEMINI_API_KEY || "";
+  }
+  return "";
+}
+
+function handleProviderChange() {
+  const localApiKey = getLocalApiKey(elements.providerSelect.value);
+  if (!elements.apiKeyInput.value.trim() && localApiKey) {
+    elements.apiKeyInput.value = localApiKey;
+  }
 }
 
 async function handleLoadFilings(event) {
@@ -183,6 +210,7 @@ function readSettingsFromForm() {
   state.providerId = elements.providerSelect.value;
   state.apiKey = elements.apiKeyInput.value.trim();
   state.secIdentity = elements.secIdentityInput.value.trim();
+  setSecIdentity(state.secIdentity);
   state.ticker = elements.tickerInput.value.trim().toUpperCase();
   state.filingCount = clamp(Number(elements.filingCountInput.value || APP_CONFIG.sec.defaultFilingCount), 1, 50);
 

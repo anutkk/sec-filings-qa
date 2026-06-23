@@ -3,7 +3,7 @@ export const APP_CONFIG = {
     tickerIndexUrl: "https://www.sec.gov/files/company_tickers.json",
     submissionsBaseUrl: "https://data.sec.gov/submissions",
     archivesBaseUrl: "https://www.sec.gov/Archives/edgar/data",
-    filingTextProxyUrl: "",
+    secProxyUrl: "https://corsproxy.io/?url=",
     tickerCacheTtlMs: 24 * 60 * 60 * 1000,
     maxRequestsPerSecond: 6,
     defaultFilingCount: 8,
@@ -22,7 +22,7 @@ export const APP_CONFIG = {
       kind: "gemini",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
       cheapModel: "gemini-2.5-flash",
-      expensiveModel: "gemini-3.5-pro",
+      expensiveModel: "gemini-3.1-pro-preview",
     },
     claude: {
       label: "Claude",
