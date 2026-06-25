@@ -378,6 +378,13 @@ textarea:focus {
   margin-bottom: 0;
 }
 
+.answer-disclaimer {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
 .answer-list {
   margin: 0 0 12px 20px;
   padding: 0;

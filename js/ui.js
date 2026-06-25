@@ -34,6 +34,9 @@ export function appendMessage(chatLog, role, content, sources = []) {
   } else {
     message.textContent = content;
   }
+  if (role === "assistant" && content) {
+    message.append(renderAiMistakesNote());
+  }
   chatLog.append(message);
   chatLog.scrollTop = chatLog.scrollHeight;
   return message;
@@ -144,6 +147,13 @@ function renderAnswerWithCitations(content, sources) {
   }
 
   return [fragment];
+}
+
+function renderAiMistakesNote() {
+  const note = document.createElement("p");
+  note.className = "answer-disclaimer";
+  note.textContent = "AI can make mistakes";
+  return note;
 }
 
 function appendInlineMarkdown(parent, text, sources) {
