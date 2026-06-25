@@ -18,14 +18,14 @@ export async function summarizeFiling({ filing, providerClient }) {
 
   return providerClient.callCheap([
     { role: "system", content: "You combine partial summaries of one SEC filing into a concise factual filing summary." },
-    { role: "user", content: `Combine these partial summaries into one 3-5 sentence summary of the full filing. Include form type, dates, major business/risk/financial topics, and avoid claiming unsupported specifics.\n\nFiling metadata: ${filing.form}, filed ${filing.filingDate}, report date ${filing.reportDate || "unknown"}.\n\nPartial summaries:\n${chunkSummaries.join("\n\n")}` },
+    { role: "user", content: `Combine these partial summaries into one short sentence summary of the full filing, max. 15 words. \n\nFiling metadata: ${filing.form}, filed ${filing.filingDate}, report date ${filing.reportDate || "unknown"}.\n\nPartial summaries:\n${chunkSummaries.join("\n\n")}` },
   ]);
 }
 
 function summarizeFilingChunk({ filing, providerClient, chunk, chunkIndex, chunkCount }) {
   return providerClient.callCheap([
     { role: "system", content: "You summarize SEC filing text for a research interface. Ignore EDGAR wrapper metadata and be concise and factual." },
-    { role: "user", content: `Summarize this filing text segment in 2-3 compact sentences. This is segment ${chunkIndex} of ${chunkCount} from the full fetched filing text. Include form type, dates, major business/risk/financial topics when visible, and do not summarize SEC accession headers.\n\nFiling metadata: ${filing.form}, filed ${filing.filingDate}, report date ${filing.reportDate || "unknown"}.\n\nFiling text segment:\n${chunk}` },
+    { role: "user", content: `Summarize this filing text segment in one compact sentence, max. 15 words. This is segment ${chunkIndex} of ${chunkCount} from the full fetched filing text. Do not summarize SEC accession headers.\n\nFiling metadata: ${filing.form}, filed ${filing.filingDate}, report date ${filing.reportDate || "unknown"}.\n\nFiling text segment:\n${chunk}` },
   ]);
 }
 
