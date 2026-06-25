@@ -3,7 +3,7 @@ import { callJsonModel, callModel, getModelForRole } from "./providers.js";
 import { answerQuestion, summarizeFiling } from "./qaEngine.js";
 import { fetchFilingText, getCompanyFilings, setSecIdentity } from "./sec.js";
 import { loadSessionApiKey, loadSettings, saveSessionApiKey, saveSettings } from "./storage.js";
-import { appendLoadingMessage, appendMessage, renderCompanySummary, renderFilings, renderProviders, renderSource, selectedFilingIds, setStatus } from "./ui.js";
+import { appendLoadingMessage, appendMessage, renderCompanySummary, renderFilings, renderProviders, renderSource, selectedFilingIds } from "./ui.js";
 
 const state = {
   providerId: DEFAULT_PROVIDER,
@@ -119,7 +119,6 @@ async function handleLoadMore() {
 
 async function loadNextFilingsPage() {
   try {
-    setStatus("Loading SEC data");
     const result = await getCompanyFilings({ ticker: state.ticker, limit: state.filingCount, offset: state.filingsOffset });
     state.company = result.company;
     state.totalRecentFilings = result.totalRecentFilings;
@@ -127,7 +126,6 @@ async function loadNextFilingsPage() {
 
     const providerClient = makeProviderClient();
     for (const filing of result.filings) {
-      setStatus(`Fetching ${filing.form}`);
       try {
         filing.text = await fetchFilingText(filing);
       } catch (error) {
@@ -138,7 +136,6 @@ async function loadNextFilingsPage() {
         continue;
       }
 
-      setStatus(`Summarizing ${filing.form}`);
       try {
         filing.summary = await summarizeFiling({ filing, providerClient });
       } catch (error) {
@@ -149,10 +146,8 @@ async function loadNextFilingsPage() {
     }
 
     refreshFilings();
-    setStatus("Ready");
   } catch (error) {
     appendMessage(elements.chatLog, "system", error.message);
-    setStatus("Needs attention", "error");
   }
 }
 
@@ -177,7 +172,6 @@ async function handleAskQuestion(event) {
 
   try {
     setChatBusy(true);
-    setStatus("Running QA workflow");
     const result = await answerQuestion({
       question,
       chatHistory: state.chatHistory,
@@ -188,11 +182,9 @@ async function handleAskQuestion(event) {
     loadingMessage.remove();
     appendMessage(elements.chatLog, "assistant", result.finalAnswer, result.sources);
     state.chatHistory.push({ role: "assistant", content: result.finalAnswer });
-    setStatus("Ready");
   } catch (error) {
     loadingMessage.remove();
     appendMessage(elements.chatLog, "system", error.message);
-    setStatus("Needs attention", "error");
   } finally {
     setChatBusy(false);
   }

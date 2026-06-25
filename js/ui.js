@@ -1,9 +1,3 @@
-export function setStatus(text, tone = "neutral") {
-  const status = document.querySelector("#appStatus");
-  status.textContent = text;
-  status.dataset.tone = tone;
-}
-
 export function renderProviders(select, providers, selectedProvider) {
   select.innerHTML = Object.entries(providers)
     .map(([id, config]) => `<option value="${escapeHtml(id)}" ${id === selectedProvider ? "selected" : ""}>${escapeHtml(config.label)}</option>`)
