@@ -250,6 +250,19 @@ textarea:focus {
   font-size: 0.78rem;
 }
 
+.filing-link {
+  display: inline-block;
+  margin-top: 7px;
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.filing-link:hover {
+  text-decoration: underline;
+}
+
 .summary-text,
 .source-excerpt,
 .source-document {

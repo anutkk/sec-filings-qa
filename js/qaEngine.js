@@ -1,14 +1,74 @@
 import { APP_CONFIG } from "./config.js";
 
 export async function summarizeFiling({ filing, providerClient }) {
-  const context = (filing.text || "").slice(0, APP_CONFIG.sec.summaryCharacters);
+  const context = getSummarizableFilingText(filing);
   if (!context) {
     return "Filing text was not available for summarization.";
   }
+  const chunks = chunkText(context, APP_CONFIG.sec.summaryChunkCharacters);
+  if (chunks.length === 1) {
+    return summarizeFilingChunk({ filing, providerClient, chunk: chunks[0], chunkIndex: 1, chunkCount: 1 });
+  }
+
+  const chunkSummaries = [];
+  for (const [index, chunk] of chunks.entries()) {
+    const summary = await summarizeFilingChunk({ filing, providerClient, chunk, chunkIndex: index + 1, chunkCount: chunks.length });
+    chunkSummaries.push(`Part ${index + 1}: ${summary}`);
+  }
+
   return providerClient.callCheap([
-    { role: "system", content: "You summarize SEC filings for a research interface. Be concise and factual." },
-    { role: "user", content: `Summarize this filing preview in 2-3 compact sentences. Include form type, dates, and likely contents when visible.\n\nFiling metadata: ${filing.form}, filed ${filing.filingDate}, report date ${filing.reportDate || "unknown"}.\n\nPreview:\n${context}` },
+    { role: "system", content: "You combine partial summaries of one SEC filing into a concise factual filing summary." },
+    { role: "user", content: `Combine these partial summaries into one 3-5 sentence summary of the full filing. Include form type, dates, major business/risk/financial topics, and avoid claiming unsupported specifics.\n\nFiling metadata: ${filing.form}, filed ${filing.filingDate}, report date ${filing.reportDate || "unknown"}.\n\nPartial summaries:\n${chunkSummaries.join("\n\n")}` },
   ]);
+}
+
+function summarizeFilingChunk({ filing, providerClient, chunk, chunkIndex, chunkCount }) {
+  return providerClient.callCheap([
+    { role: "system", content: "You summarize SEC filing text for a research interface. Ignore EDGAR wrapper metadata and be concise and factual." },
+    { role: "user", content: `Summarize this filing text segment in 2-3 compact sentences. This is segment ${chunkIndex} of ${chunkCount} from the full fetched filing text. Include form type, dates, major business/risk/financial topics when visible, and do not summarize SEC accession headers.\n\nFiling metadata: ${filing.form}, filed ${filing.filingDate}, report date ${filing.reportDate || "unknown"}.\n\nFiling text segment:\n${chunk}` },
+  ]);
+}
+
+function getSummarizableFilingText(filing) {
+  const primaryDocumentText = extractPrimaryDocumentText(filing.text || "", filing.primaryDocument);
+  return cleanFilingText(primaryDocumentText || filing.text || "");
+}
+
+function extractPrimaryDocumentText(filingText, primaryDocument) {
+  const documents = [...filingText.matchAll(/<DOCUMENT>([\s\S]*?)<\/DOCUMENT>/gi)].map((match) => match[1]);
+  if (!documents.length) {
+    return "";
+  }
+
+  const normalizedPrimary = String(primaryDocument || "").trim().toLowerCase();
+  const primaryDocumentBlock = documents.find((document) => {
+    const filename = document.match(/<FILENAME>\s*([^\n\r<]+)/i)?.[1]?.trim().toLowerCase();
+    return filename && filename === normalizedPrimary;
+  }) || documents[0];
+
+  return primaryDocumentBlock.match(/<TEXT>([\s\S]*?)<\/TEXT>/i)?.[1] || primaryDocumentBlock;
+}
+
+function cleanFilingText(text) {
+  return String(text || "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#160;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function chunkText(text, chunkSize) {
+  const chunks = [];
+  for (let index = 0; index < text.length; index += chunkSize) {
+    chunks.push(text.slice(index, index + chunkSize));
+  }
+  return chunks;
 }
 
 export async function answerQuestion({ question, chatHistory, selectedFilings, providerClient }) {

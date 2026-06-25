@@ -1,6 +1,7 @@
 import { APP_CONFIG } from "./config.js";
 
 const TICKER_CACHE_KEY = "sec-filings-qa-ticker-index";
+const OWNERSHIP_FORMS = new Set(["3", "4", "5"]);
 let lastRequestAt = 0;
 let secIdentity = "";
 
@@ -24,8 +25,9 @@ export async function resolveTicker(ticker) {
 export async function getCompanyFilings({ ticker, limit, offset = 0 }) {
   const company = await resolveTicker(ticker);
   const submissions = await fetchJson(`${APP_CONFIG.sec.submissionsBaseUrl}/CIK${company.cik}.json`);
-  const filings = normalizeRecentFilings(submissions, company).slice(offset, offset + limit);
-  return { company, filings, totalRecentFilings: submissions.filings?.recent?.accessionNumber?.length || 0 };
+  const eligibleFilings = normalizeRecentFilings(submissions, company).filter((filing) => !OWNERSHIP_FORMS.has(filing.form));
+  const filings = eligibleFilings.slice(offset, offset + limit);
+  return { company, filings, totalRecentFilings: eligibleFilings.length };
 }
 
 export async function fetchFilingText(filing) {

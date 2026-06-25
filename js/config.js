@@ -3,11 +3,11 @@ export const APP_CONFIG = {
     tickerIndexUrl: "https://www.sec.gov/files/company_tickers.json",
     submissionsBaseUrl: "https://data.sec.gov/submissions",
     archivesBaseUrl: "https://www.sec.gov/Archives/edgar/data",
-    secProxyUrl: "https://corsproxy.io/?url=",
+    secProxyUrl: "https://proxy.corsfix.com/?{rawUrl}",
     tickerCacheTtlMs: 24 * 60 * 60 * 1000,
     maxRequestsPerSecond: 6,
     defaultFilingCount: 8,
-    summaryCharacters: 1000,
+    summaryChunkCharacters: 24000,
   },
   providers: {
     openai: {

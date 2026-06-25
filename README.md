@@ -6,7 +6,7 @@ A static HTML/CSS/JavaScript app for asking grounded questions over SEC filings.
 
 - Lets the user enter an LLM provider, API key, SEC identity, ticker, and filing count.
 - Resolves tickers through SEC ticker metadata and fetches recent company submissions.
-- Loads recent filings, summarizes the first 1000 characters with the configured cheap model, and shows each filing with a checkbox selected by default.
+- Loads recent filings, skips forms 3, 4, and 5, fetches each filing's full text, summarizes the primary filing document with the configured cheap model, and shows each filing with a checkbox selected by default.
 - Enables chat once selected filings have accessible text.
 - Runs a RAG-like workflow in `js/qaEngine.js`: query rewrite, keyword generation, paragraph extraction, relevance judging, final synthesis, and bracket citations.
 - Renders citations like `[source1]` as links that open source details and highlighted excerpts in the right pane.

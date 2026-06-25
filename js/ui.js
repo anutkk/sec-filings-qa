@@ -77,6 +77,7 @@ function renderFilingCard(filing) {
         <div>
           <h3>${escapeHtml(filing.form)} · ${escapeHtml(filing.filingDate)}</h3>
           <p class="meta-line">Report ${escapeHtml(filing.reportDate || "unknown")} · ${escapeHtml(filing.description || filing.primaryDocument)}</p>
+          <a class="filing-link" href="${escapeHtml(filing.filingUrl)}" target="_blank" rel="noreferrer">Open filing</a>
         </div>
       </header>
       <p class="${summaryClass}">${escapeHtml(summary)}</p>
