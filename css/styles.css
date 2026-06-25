@@ -28,6 +28,11 @@ body {
     #edf1ed;
 }
 
+body {
+  display: flex;
+  flex-direction: column;
+}
+
 button,
 input,
 select,
@@ -49,8 +54,49 @@ textarea:disabled {
   display: grid;
   grid-template-columns: minmax(280px, 360px) minmax(360px, 1fr) minmax(300px, 420px);
   gap: 14px;
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
   padding: 14px;
+}
+
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 12px;
+  border-top: 1px solid rgba(32, 33, 36, 0.1);
+  background: rgba(255, 253, 248, 0.82);
+  color: var(--muted);
+  padding: 10px 14px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.footer-link {
+  color: var(--accent-strong);
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  text-decoration: underline;
+}
+
+.footer-icon-link {
+  display: inline-flex;
+  align-items: center;
+}
+
+.github-icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.footer-separator {
+  width: 1px;
+  height: 16px;
+  background: var(--line);
 }
 
 .pane {
@@ -481,5 +527,20 @@ mark {
   .ticker-row label:last-child,
   .chat-form button {
     width: 100%;
+  }
+
+  .app-footer {
+    align-items: stretch;
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .footer-icon-link {
+    justify-content: center;
+  }
+
+  .footer-separator {
+    width: 100%;
+    height: 1px;
   }
 }
