@@ -40,7 +40,40 @@ export async function fetchFilingText(filing) {
   if (!response.ok) {
     throw new Error(`Could not fetch filing text (${response.status}). Configure sec.secProxyUrl in js/config.js or open the SEC link directly.`);
   }
-  return response.text();
+  const rawText = await response.text();
+  return normalizeFilingText(rawText);
+}
+
+function normalizeFilingText(text) {
+  const tagStrippedText = String(text || "")
+    .replace(/<br\s*\/?\s*>/gi, "\n")
+    .replace(/<\/p\s*>/gi, "\n")
+    .replace(/<[^>]*>/g, "");
+
+  const numericDecodedText = tagStrippedText.replace(/&#(x[\da-f]+|\d+);?/gi, (entity, codePoint) => {
+    const value = codePoint.toLowerCase().startsWith("x") ? parseInt(codePoint.slice(1), 16) : Number(codePoint);
+    if (!Number.isFinite(value)) {
+      return entity;
+    }
+    try {
+      return String.fromCodePoint(value);
+    } catch {
+      return entity;
+    }
+  });
+
+  if (typeof document === "undefined") {
+    return numericDecodedText
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&apos;/gi, "'");
+  }
+
+  const decoder = document.createElement("textarea");
+  decoder.innerHTML = numericDecodedText;
+  return decoder.value;
 }
 
 async function loadTickerIndex() {
