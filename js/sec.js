@@ -41,7 +41,43 @@ export async function fetchFilingText(filing) {
     throw new Error(`Could not fetch filing text (${response.status}). Configure sec.secProxyUrl in js/config.js or open the SEC link directly.`);
   }
   const rawText = await response.text();
-  return normalizeFilingText(rawText);
+
+  return normalizeFetchedFilingText(rawText);
+}
+
+function normalizeFetchedFilingText(rawText) {
+  try {
+    const parser = new DOMParser();
+    const xmlDocument = parser.parseFromString(String(rawText || ""), "application/xml");
+    if (xmlDocument.querySelector("parsererror")) {
+      throw new Error("Filing text is not valid XML.");
+    }
+
+    const documents = [...xmlDocument.getElementsByTagName("DOCUMENT")];
+    if (!documents.length) {
+      throw new Error("Filing text did not include DOCUMENT nodes.");
+    }
+
+    const serializer = new XMLSerializer();
+    const normalizedDocuments = documents.map((documentNode) => {
+      const rawDocument = serializer.serializeToString(documentNode);
+      if (/<TYPE>\s*GRAPHIC\b/i.test(rawDocument)) {
+        return "";
+      }
+
+      const textNode = documentNode.getElementsByTagName("TEXT")[0]
+        || documentNode.getElementsByTagName("Text")[0]
+        || documentNode.getElementsByTagName("text")[0];
+      const text = textNode
+        ? [...textNode.childNodes].map((childNode) => serializer.serializeToString(childNode)).join("")
+        : documentNode.textContent;
+      return normalizeFilingText(text).trim();
+    }).filter(Boolean);
+
+    return normalizedDocuments.join("\n\n");
+  } catch {
+    return normalizeFilingText(rawText);
+  }
 }
 
 function normalizeFilingText(text) {

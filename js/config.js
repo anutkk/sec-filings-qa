@@ -21,7 +21,7 @@ export const APP_CONFIG = {
       label: "Gemini",
       kind: "gemini",
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-      cheapModel: "gemini-2.5-flash",
+      cheapModel: "gemini-2.5-flash-lite",
       expensiveModel: "gemini-3.1-pro-preview",
     },
     claude: {

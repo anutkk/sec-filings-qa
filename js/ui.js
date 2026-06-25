@@ -70,10 +70,6 @@ export function renderSource(sourcePane, externalLink, source) {
         <h3>Relevant excerpt</h3>
         <p class="source-excerpt">${highlightText(source.sourceVerbatim || source.paragraph, source.matchedSentence || source.matchedKeyword)}</p>
       </section>
-      <section>
-        <h3>Filing context</h3>
-        <div class="source-document">${highlightText(extractWindow(filing.text || source.paragraph, source.sourceVerbatim || source.paragraph), source.matchedSentence || source.matchedKeyword)}</div>
-      </section>
     </article>`;
 }
 
