@@ -61,6 +61,7 @@ async function init() {
   elements.settingsForm.addEventListener("submit", handleLoadFilings);
   elements.loadMoreButton.addEventListener("click", handleLoadMore);
   elements.chatForm.addEventListener("submit", handleAskQuestion);
+  elements.questionInput.addEventListener("keydown", handleQuestionKeydown);
   elements.chatLog.addEventListener("click", handleCitationClick);
   elements.filingsList.addEventListener("change", handleFilingSelection);
   elements.providerSelect.addEventListener("change", handleProviderChange);
@@ -87,6 +88,15 @@ function handleProviderChange() {
   if (!elements.apiKeyInput.value.trim() && localApiKey) {
     elements.apiKeyInput.value = localApiKey;
   }
+}
+
+function handleQuestionKeydown(event) {
+  if (event.key !== "Enter" || event.shiftKey || event.isComposing) {
+    return;
+  }
+
+  event.preventDefault();
+  elements.chatForm.requestSubmit();
 }
 
 async function handleLoadFilings(event) {
