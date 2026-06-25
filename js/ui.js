@@ -39,6 +39,20 @@ export function appendMessage(chatLog, role, content, sources = []) {
   return message;
 }
 
+export function appendLoadingMessage(chatLog) {
+  const message = appendMessage(chatLog, "assistant", "");
+  message.classList.add("loading-message");
+  message.setAttribute("aria-live", "polite");
+  message.innerHTML = `
+    <span class="loading-label">Thinking</span>
+    <span class="loading-dots" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </span>`;
+  return message;
+}
+
 export function renderSource(sourcePane, externalLink, source) {
   if (!source) {
     sourcePane.innerHTML = `<div class="empty-state compact"><h2>No source selected</h2><p>Click a bracket citation in an answer to inspect the supporting filing excerpt.</p></div>`;

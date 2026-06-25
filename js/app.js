@@ -3,7 +3,7 @@ import { callJsonModel, callModel, getModelForRole } from "./providers.js";
 import { answerQuestion, summarizeFiling } from "./qaEngine.js";
 import { fetchFilingText, getCompanyFilings, setSecIdentity } from "./sec.js";
 import { loadSessionApiKey, loadSettings, saveSessionApiKey, saveSettings } from "./storage.js";
-import { appendMessage, renderCompanySummary, renderFilings, renderProviders, renderSource, selectedFilingIds, setStatus } from "./ui.js";
+import { appendLoadingMessage, appendMessage, renderCompanySummary, renderFilings, renderProviders, renderSource, selectedFilingIds, setStatus } from "./ui.js";
 
 const state = {
   providerId: DEFAULT_PROVIDER,
@@ -163,6 +163,7 @@ async function handleAskQuestion(event) {
   elements.questionInput.value = "";
   appendMessage(elements.chatLog, "user", question);
   state.chatHistory.push({ role: "user", content: question });
+  const loadingMessage = appendLoadingMessage(elements.chatLog);
 
   try {
     setChatBusy(true);
@@ -174,10 +175,12 @@ async function handleAskQuestion(event) {
       providerClient: makeProviderClient(),
     });
     state.latestSources = result.sources;
+    loadingMessage.remove();
     appendMessage(elements.chatLog, "assistant", result.finalAnswer, result.sources);
     state.chatHistory.push({ role: "assistant", content: result.finalAnswer });
     setStatus("Ready");
   } catch (error) {
+    loadingMessage.remove();
     appendMessage(elements.chatLog, "system", error.message);
     setStatus("Needs attention", "error");
   } finally {
