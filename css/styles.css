@@ -312,6 +312,35 @@ textarea:focus {
   border: 1px solid var(--line);
 }
 
+.answer-heading {
+  margin: 14px 0 6px;
+  font-size: 1rem;
+}
+
+.answer-heading:first-child,
+.answer-paragraph:first-child,
+.answer-list:first-child {
+  margin-top: 0;
+}
+
+.answer-paragraph {
+  margin: 0 0 12px;
+}
+
+.answer-paragraph:last-child,
+.answer-list:last-child {
+  margin-bottom: 0;
+}
+
+.answer-list {
+  margin: 0 0 12px 20px;
+  padding: 0;
+}
+
+.answer-list li {
+  margin-bottom: 7px;
+}
+
 .message.loading-message {
   display: inline-flex;
   align-items: center;

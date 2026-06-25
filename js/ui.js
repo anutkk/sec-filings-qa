@@ -99,25 +99,84 @@ function renderFilingCard(filing) {
 }
 
 function renderAnswerWithCitations(content, sources) {
-  const fragments = [];
-  const citationPattern = /\[(source\d+)\]/gi;
+  const fragment = document.createDocumentFragment();
+  const lines = String(content || "").split(/\r?\n/);
+  let index = 0;
+
+  while (index < lines.length) {
+    if (!lines[index].trim()) {
+      index += 1;
+      continue;
+    }
+
+    if (isListItem(lines[index])) {
+      const list = document.createElement("ul");
+      list.className = "answer-list";
+      while (index < lines.length && isListItem(lines[index])) {
+        const item = document.createElement("li");
+        appendInlineMarkdown(item, lines[index].replace(/^\s*[-*]\s+/, ""), sources);
+        list.append(item);
+        index += 1;
+      }
+      fragment.append(list);
+      continue;
+    }
+
+    const heading = lines[index].match(/^\s*\*\*(.+?)\*\*\s*$/);
+    if (heading) {
+      const element = document.createElement("h3");
+      element.className = "answer-heading";
+      appendInlineMarkdown(element, heading[1], sources);
+      fragment.append(element);
+      index += 1;
+      continue;
+    }
+
+    const paragraphLines = [];
+    while (index < lines.length && lines[index].trim() && !isListItem(lines[index]) && !lines[index].match(/^\s*\*\*(.+?)\*\*\s*$/)) {
+      paragraphLines.push(lines[index].trim());
+      index += 1;
+    }
+    const paragraph = document.createElement("p");
+    paragraph.className = "answer-paragraph";
+    appendInlineMarkdown(paragraph, paragraphLines.join(" "), sources);
+    fragment.append(paragraph);
+  }
+
+  return [fragment];
+}
+
+function appendInlineMarkdown(parent, text, sources) {
+  const inlinePattern = /\[(source\d+)\]|\*\*(.+?)\*\*/gi;
   let lastIndex = 0;
   let match;
-  while ((match = citationPattern.exec(content)) !== null) {
-    fragments.push(document.createTextNode(content.slice(lastIndex, match.index)));
-    const sourceId = match[1].toLowerCase();
-    const source = sources.find((item) => item.id === sourceId);
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "citation-link";
-    button.textContent = `[${sourceId}]`;
-    button.dataset.sourceId = sourceId;
-    button.disabled = !source;
-    fragments.push(button);
-    lastIndex = citationPattern.lastIndex;
+  while ((match = inlinePattern.exec(text)) !== null) {
+    parent.append(document.createTextNode(text.slice(lastIndex, match.index)));
+    if (match[1]) {
+      parent.append(renderCitationButton(match[1].toLowerCase(), sources));
+    } else {
+      const strong = document.createElement("strong");
+      appendInlineMarkdown(strong, match[2], sources);
+      parent.append(strong);
+    }
+    lastIndex = inlinePattern.lastIndex;
   }
-  fragments.push(document.createTextNode(content.slice(lastIndex)));
-  return fragments;
+  parent.append(document.createTextNode(text.slice(lastIndex)));
+}
+
+function renderCitationButton(sourceId, sources) {
+  const source = sources.find((item) => item.id === sourceId);
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "citation-link";
+  button.textContent = `[${sourceId}]`;
+  button.dataset.sourceId = sourceId;
+  button.disabled = !source;
+  return button;
+}
+
+function isListItem(line) {
+  return /^\s*[-*]\s+/.test(line);
 }
 
 function extractWindow(text, needle) {
